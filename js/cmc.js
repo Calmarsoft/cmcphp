@@ -145,13 +145,13 @@ var cmc = function() {
                 // setup an event to trigger a POST exchange
                 eventpost: function(eventname) {
                     if (jQuery.inArray(eventname, ['click', 'change', 'activate']) > -1) {
-                        if (jsType == 'tabs' && eventname == 'activate')
+                        if (jsType === 'tabs' && eventname === 'activate')
                             eventname = 'tabsactivate';
                         if (jsObj['on']) {
                             jsObj.off(eventname, cmc.eventpost);
                             jsObj.on(eventname, this, cmc.eventpost);
                         } else {
-                            jsObj.unbind(eventname, cmc.eventpost)
+                            jsObj.unbind(eventname, cmc.eventpost);
                             jsObj[eventname](this, cmc.eventpost);
                         }
                     }

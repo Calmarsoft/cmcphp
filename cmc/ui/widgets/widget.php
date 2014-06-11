@@ -725,7 +725,21 @@ abstract class widget implements IClonablep, ISerializablep {
     public function bDynamic() {
         return $this->_bDynamic;
     }
-        
+    /**
+     * forces the dynamic status
+     * (can be false in a static frame and simple component like label)
+     */
+    public function bSetDynamic() {
+        $this->_bDynamic = true;
+    }
+    /**
+     * clears dynamic status to false
+     * (useful to avoid javascript dependencies, if no object javascript interaction is needed)
+     */
+    public function bClearDynamic() {
+        $this->_bDynamic = false;
+    }
+    
     /**
      *  gets JavaScript Snipset to add in the document.ready() section - creation, client side validation, ajax update -
      */

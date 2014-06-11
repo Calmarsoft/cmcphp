@@ -56,6 +56,7 @@ class menu extends widget {
 
     public function __construct($frame, $xpath = '') {
         parent::__construct($frame, $xpath);
+        $this->_bDynamic = true;
         $this->setJSObject('menu');
     }
 
