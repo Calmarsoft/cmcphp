@@ -135,8 +135,9 @@ EOT
             } else
                 $html = '';
             $req = \cmc\sess()->getRequest();
-            if (config::PoweredBy_Banner($req->getPath(\cmc\app())))
-                $html .= \cmc\cmc::getPoweredByBanner();
+            $ban = config::PoweredBy_Banner($req->getPath(\cmc\app()));
+            if ($ban)
+                $html .= $ban;
             if ($html != '') {
                 $extra = material::getCloneFromSource($html, $view->material()->document());
                 if ($extra) {

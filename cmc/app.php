@@ -563,7 +563,7 @@ class app implements ISerializable {
 
                 header("X-Timings: parse=$parset,execution=$exect,total=$totalt,mem=${mem}MB");
                 if ($req->getAnswerType() == request::type_html) {
-                    printf('<style>.cmc-timings {float: left;margin-left: 10px;margin-top:0px;}</style>');
+                    printf('<style>.cmc-timings {float: left;margin-left: 10px;margin-top:0px;font-size:small;}</style>');
                     printf('<br><pre class="cmc-timings">parse time=%.03f ms<br>', $parset);
                     printf('Execution time=%.03f ms, Total=%.03f ms<br>Memory max uage=%.02fMB', $exect, $totalt, $mem);
                 }

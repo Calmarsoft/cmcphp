@@ -118,8 +118,8 @@ class cmc {
     /**
      * @ignore
      */
-    static public function getPoweredByBanner() {
-        $banner = config::poweredBy;
+    static public function getPoweredByBanner($path) {
+        $banner = config::PoweredBy_Banner($path);
         if ($banner == true)
             $banner = '<style>.cmc-poweredby{float:right;margin-right:20px;margin-top:20px}</style><div class="cmc-poweredby">Powered by CMC (c) <a href="http://www.calmarsoft.com/">CalmarSoft</a></div>';
         return $banner;
