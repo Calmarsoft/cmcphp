@@ -227,7 +227,7 @@ abstract class dftconfig {
     /**
      * @ignore
      */
-    static function PoweredBy_Banner($path) { return poweredBy;}
+    static function PoweredBy_Banner($path) { return config::poweredBy;}
     /**
      * materials files extension
      */

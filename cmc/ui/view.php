@@ -81,7 +81,7 @@ class view implements ISerializable {
                     $pitem = null;
                     $mattr = $mitem->getAttribute('name');
                     if ($mattr) {
-                        $pitems = $parent->findXpathNodes(null, $mitem->getNodePath());
+                        $pitems = $parent->findXpathNodes(null, $mitem->parentNode->getNodePath().'/meta');
                         foreach ($pitems as $pmeta) {
                             $pmetaname = $pmeta->getAttribute('name');
                             if ($pmetaname && $pmetaname == $mattr)

@@ -118,7 +118,8 @@ class documentFrame extends frame {
                             $l->setAttribute('href', request::rootpath() . config::buildUrlLang($sess->getLangName(), $href));
                         }
                     } else {
-                        $l->setAttribute('href', '/'. request::rootpath_short() . $href);
+                        if ($href[0]==='/') $href = substr($href, 1);
+                        $l->setAttribute('href', request::rootpath() . $href);
                     }
                 }
             }
@@ -135,7 +136,7 @@ EOT
             } else
                 $html = '';
             $req = \cmc\sess()->getRequest();
-            $ban = config::PoweredBy_Banner($req->getPath(\cmc\app()));
+            $ban = \cmc\cmc::getPoweredByBanner($req->getPath(\cmc\app()));
             if ($ban)
                 $html .= $ban;
             if ($html != '') {

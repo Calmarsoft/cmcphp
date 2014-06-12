@@ -474,7 +474,6 @@ class app implements ISerializable {
             // and immmediate expirity for others
             header_remove("Expires");
 
-            //TODO: put the header depending on the view's language
             $langn = $this->_sess->getLangName();
             if ($langn && strlen($langn) > 0)
                 header('Content-Language: ' . $langn, true);

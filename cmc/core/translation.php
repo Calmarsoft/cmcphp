@@ -118,6 +118,10 @@ EOT
     );
     private $_localization;
     
+    function addData($data) {
+        $this->_translation = array_replace_recursive($this->_translation, $data);
+        $this->updateLocalization();
+    }
     /**
      * finds a localized string from a key
      * 
@@ -153,15 +157,22 @@ EOT
         }        
     }
     /**
+     * @ignore
+     */
+    private function updateLocalization()
+    {
+        if (array_key_exists($this->_lang, $this->_translation))
+            $this->_localization = $this->_translation[$this->_lang];
+        else
+            $this->_localization = $this->_translation[config::DFT_translation];
+    }
+    /**
      * initializes language and locale object from the givent language string
      * @param string language code
      */
     function __construct($lang)
     {
         $this->_lang = $lang;
-        if (array_key_exists($lang, $this->_translation))
-            $this->_localization = $this->_translation[$lang];
-        else
-            $this->_localization = $this->_translation[config::DFT_translation];
+        $this->updateLocalization();
     }
 }
