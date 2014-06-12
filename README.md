@@ -19,8 +19,11 @@ Documentation
 -------------
 
 User's manual is available here: http://cmc.calmarsoft.com/cmcphp/doc
+
 Reference manual (autodocumentation) is available here: http://cmc.calmarsoft.com/cmcphp/api
+
 Project's home: http://cmc.calmarsoft.com
+
 
 Contact
 -------
