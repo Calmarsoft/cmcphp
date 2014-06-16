@@ -41,7 +41,7 @@ use cmc\app, cmc\sess;
 abstract class frame {
     protected $_widgetdef = array();
     protected $_widgets;      // linked widgets
-    protected $_sourcePath=null;
+    //protected $_sourcePath=null; //TODO: find solution to have this info
     protected $_code='';
 
     /**
@@ -70,6 +70,11 @@ abstract class frame {
         return $obj;
     }
 
+    /**
+     * frame initialize
+     * can be used dynamically add and create widgets
+     * call parent function when implent this
+     */
     public function initialize() {
         foreach($this->_widgetdef as $wname => $wdef)
         {
@@ -165,11 +170,11 @@ abstract class frame {
     /**
      * path of php source code
      * @return type
-     */
+     *
     public function getSourcePath()
     {
         return $this->_sourcePath;
-    }
+    }*/
 
     // when serialized with the app
     public function OnSerialize() {
@@ -201,21 +206,22 @@ abstract class frame {
      */
 
     /**
-     * shortcut for current 
+     * shortcut for current request
+     * @return \cmc\core\ui\request
      */
     public function qry() {
         $this->sess()->getRequest();
     }
     /**
      * shortcut for current application
-     * @return type
+     * @return \cmc\app
      */
     public function app() {
         return app::current();
     }
     /**
      * shortcut for current session
-     * @return type
+     * @return \cmc\sess
      */
     public function sess() {
         $app = app::current();
@@ -223,7 +229,7 @@ abstract class frame {
     }
     /**
      * shortcut for current data environment
-     * @return type
+     * @return \cmc\db\dataenv
      */
     public function dtaenv() {
        return $this->sess()->getDataEnv();
@@ -231,7 +237,7 @@ abstract class frame {
     /**
      * shortcut for a datasource of the data environment
      * @param type $dsName
-     * @return null
+     * @return null|\cmc\db\datasource
      */
     public function datasource($dsName) {
         $dte = $this->dtaenv();
@@ -242,9 +248,9 @@ abstract class frame {
     }
     /** 
      * shortcut for a datasource's first record
-     * @param type $dsName
-     * @param type $params
-     * @return null
+     * @param string $dsName
+     * @param array $params
+     * @return null|array
      */
     public function dataSourceFirst($dsName, $params=false) {
         $dte = $this->dtaenv();
@@ -255,9 +261,9 @@ abstract class frame {
     }
     /**
      * shortcut for datasource execution
-     * @param type $dsName
-     * @param type $params
-     * @return null
+     * @param string $dsName
+     * @param array $params
+     * @return null|bool
      */
     public function dataSourceExec($dsName, $params=false) {
         $dte = $this->dtaenv();

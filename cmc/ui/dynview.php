@@ -263,7 +263,7 @@ class dynview extends view implements ISerializable {
      * defines a redirect answer
      * 
      * @param string $new_location
-     * @param type $bReplace
+     * @param bool $bReplace if true the original location will be hidden and won't be present in the navigator's history
      */
     public function setRedirect($new_location, $bReplace = false) {
         if ($new_location[0] == '/') {

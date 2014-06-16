@@ -304,9 +304,9 @@ class view implements ISerializable {
 
         if ($framedef != false) {
             $this->_frames[$cmcId] = $framedef;
-            $srcpath = $framedef->getSourcePath();
+            /*$srcpath = $framedef->getSourcePath();
             if ($srcpath)
-                $this->_material_mdt[$srcpath] = filemtime($srcpath);
+                $this->_material_mdt[$srcpath] = filemtime($srcpath);*/
             $framedef->viewPreStaticUpdate($this);
             $framedef->viewStaticUpdate($this);
             if (!$framedef->is_dynamic())
@@ -557,7 +557,7 @@ class view implements ISerializable {
     }
 
     /**
-     * used to check it the material items have change
+     * used to check if the material items have changed
      * 
      * it checks all files needed to build the material,
      * EXCEPT php source files (like frame implementation)

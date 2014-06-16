@@ -92,8 +92,9 @@ class documentFrame extends frame {
             if ($l->nodeName == 'a') {  // for links, just add facility to remove the extension
                 if (self::$preg_ext == null)
                     self::$preg_ext = '![.]*' . config::VIEW_EXT . '$!';
+                $count = null;
                 $furl = preg_replace(self::$preg_ext, '', $pv, 1, $count);
-                if ($count == 0 && preg_match('![.]+.[\w]+!', $pv))
+                if ($count == 0 && \preg_match('![.]+.[\w]+!', $pv))
                     $furl = $req->relocate_path($pv, $view->getName());
             } else    // complete fix for others.
                 $furl = $req->relocate_path($pv, $view->getName());
@@ -108,12 +109,13 @@ class documentFrame extends frame {
         foreach ($list as $l) {
             $href = $l->getAttribute('href');
 
-            if ($href && $href != '#' && strpos($href, '//') !== 0 && strpos($href, 'http') !== 0) {   // if not prefixed by a language, add it                
+            if ($href && !preg_match('%(^http(s|)://)|(^#)|(^//)%', $href)) {  // if not prefixed by a language, add it                
                 if (request::rootpath() == '/' || substr($href, 0, strlen(request::rootpath())) != request::rootpath()) {
                     
                     if (config::Multilingual) {
                         $regex = $app->getLanguageUrlRegex();
-                        if (!preg_match($regex, $href, $match)) {
+                        $match = null;
+                        if (!\preg_match($regex, $href, $match)) {
                             if ($href[0]==='/') $href = substr($href, 1);
                             $l->setAttribute('href', request::rootpath() . config::buildUrlLang($sess->getLangName(), $href));
                         }
