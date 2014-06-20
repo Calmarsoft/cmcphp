@@ -164,11 +164,11 @@ abstract class widget implements IClonablep, ISerializablep {
     // lifecyle events
     // 
     /**
-     * view loaded: view's DOM is available
+     * view attach: a new view's DOM is available
      * used to update the current dom item from the current view
      * @param \cmc\ui\view $view
      */
-    public function viewLoaded(view $view) {
+    public function viewAttach(view $view) {
         if ($this->_objxpath != '') {
             $this->_currwview = $this->_wviews->initDOMElement($view, $this->_frame, $this->_objxpath);
         } else
@@ -462,7 +462,7 @@ abstract class widget implements IClonablep, ISerializablep {
     public function viewUpdate(dynview $view) {
         $this->applyProperties($view, true);
         $script = $this->getScriptCode();
-        if ($script)
+        if (is_string($script) && ($script!==''))
             $view->addScriptCode(trim($script, ' '));
     }
 
@@ -827,8 +827,16 @@ abstract class widget implements IClonablep, ISerializablep {
         if ($this->_wviews)
             $this->_wviews->OnSerialize();
         $this->_ajaxAnswer = null;
-        $this->getScriptCode();
-        $this->_composcript = '';
+        
+        if (\cmc\app()->getSession()==null) {
+            $this->_actualscript = '';            
+        } else if ($this->bDynamic()) {
+            $this->_actualscript = true;
+            $this->_composcript = '';
+        }
+        else
+            $this->getScriptCode();    
+        
         $this->_properties = array();       // data remains in 'clt' part
     }
 

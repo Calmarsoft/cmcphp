@@ -307,7 +307,7 @@ class view implements ISerializable {
             /*$srcpath = $framedef->getSourcePath();
             if ($srcpath)
                 $this->_material_mdt[$srcpath] = filemtime($srcpath);*/
-            $framedef->viewPreStaticUpdate($this);
+            $framedef->viewAttach($this);
             $framedef->viewStaticUpdate($this);
             if (!$framedef->is_dynamic())
                 $framedef->viewInitialUpdate($this);

@@ -26,7 +26,7 @@ namespace cmc\core;
 
 use cmc\config;
 
-require_once('php/config.php');
+require_once('config.php');
 
 /**
  * Handles direct translation data

@@ -113,12 +113,12 @@ abstract class frame {
     abstract public function getName();
 
     /**
-     * preparing initial static update
+     * update/set frame->view link
      * @param type $view
      */
-    public function viewPreStaticUpdate($view) {
+    public function viewAttach($view) {
         foreach ($this->_widgets as $w) {
-            $w->viewLoaded($view);
+            $w->viewAttach($view);
         }
     }
     /**

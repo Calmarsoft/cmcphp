@@ -63,6 +63,7 @@ class material implements IClonable, ISerializable {
     private $_physpath;
     private $_bDynamic = false;
     private $_jsItems;
+    private $_position_dyn = null;
     private $_customscriptcode = '', $_customscriptcode_bottom = '';
     private $_customscriptcode_dyn = '', $_customscriptcode_bottom_dyn = '';
 
@@ -658,14 +659,21 @@ EOT
             $in_code = $this->_customscriptcode . $this->_customscriptcode_dyn .
                         $this->_customscriptcode_bottom . $this->_customscriptcode_bottom_dyn;
             if ($jsOriginalCode!== '' || $in_code!== '') {
-                if (config::Javascript_DelayLoad) {
-                    $this->_scriptElem->nodeValue = $jsOriginalCode .
+                $l = '';
+                if ($this->_position_dyn !== null) {
+                    $l = \substr($this->_scriptElem->nodeValue, 0, $this->_position_dyn);
+                }
+                if (config::Javascript_DelayLoad && $l==='' && $jsOriginalCode!=='') {
+                        $val = $jsOriginalCode .
                             self::delayJSObj.'.init=function(){ $(function() {' . $in_code  .
-                            '});}' . '})();';
+                            '});} })();';
                 } else {
-                        $this->_scriptElem->nodeValue = '$(function() {' . $jsOriginalCode. $in_code .
+                        $val = $l . '$(function() {' . $jsOriginalCode. $in_code .
                             '});';
                 }
+                $this->_scriptElem->nodeValue = $val;
+                if (!$this->_position_dyn && $jsOriginalCode!=='')
+                    $this->_position_dyn = strlen($val);
             }
             $this->_txtdoc = null;
         }
@@ -742,7 +750,7 @@ EOT
         if ($h && $h->length > 0) {
             $ban = $this->_document->createElement('meta');
             $ban->setAttribute('name', 'Generator');
-            $ban->setAttribute('content', 'CMC CalmarSoft components v0.5 - http://www.calmarsoft.com');
+            $ban->setAttribute('content', 'CMC CalmarSoft components v0.9 - http://www.calmarsoft.com');
             $m = $this->_docxpath->query('/html/head/link');
             if ($m && $m->length > 0)
                 $h->item(0)->insertBefore($ban, $m->item(0));

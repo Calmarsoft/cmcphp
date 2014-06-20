@@ -134,7 +134,7 @@ require_once('error/fatalErrors.php');
 require_once('dftconfig.php');
 require_once('core/request.php');
 require_once('core/translation.php');
-require_once('php/config.php');             // this one is external from the lib
+require_once('config.php');             // this one is external from the lib
 require_once('core/IClonable.php');
 require_once('core/ISerializable.php');
 require_once('core/cache.php');

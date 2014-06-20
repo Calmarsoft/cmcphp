@@ -591,7 +591,10 @@ function app() {
 function sess() {
     return sess::current(app());
 }
-
+/**
+ * easy and global access to current request object
+ * @return \cmc\core\request
+ */
 function qry() {
     return sess()->getRequest();
 }

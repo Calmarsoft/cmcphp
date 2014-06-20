@@ -58,6 +58,7 @@ class request {
         'image/webp' => self::type_image,
         'image/jpeg' => self::type_image, 'image/png' => self::type_image, 'image/*' => self::type_image);
     private $_app;
+    private $_params;
     private $_reqContentMatch;
     private $_reqContent;
     private $_answerContent;
@@ -383,10 +384,12 @@ class request {
             $this->_reqParams = $_REQUEST;
             $this->_params = $this->_reqParams;
             $i = 0;
-            foreach (preg_split('|/|', $RESTstr) as $rest) {
-                $this->_reqREST[$i] = $rest;
-                $this->_params[$i] = $rest;
-                $i = $i + 1;
+            if ($RESTstr!=='') {
+                foreach (preg_split('|/|', $RESTstr) as $rest) {
+                    $this->_reqREST[$i] = $rest;
+                    $this->_params[$i] = $rest;
+                    $i = $i + 1;
+                }
             }
             /*    var_dump("calc req: $basepath, reqPath:".$this->_reqPath.", viewpath: ".$this->_reqViewPath.
               ", lang:".$this->_regLang.
@@ -468,11 +471,12 @@ class request {
      * @param type $parmname
      */
     public function getParam($parmname) {
+        $result = null;
         $parms = $this->getParams();
-        if (array_key_exists($parmname, $parms))
-            return $parms[$parmname];
-        else
-            return null;
+        if (array_key_exists($parmname, $parms)) {
+            $result = $parms[$parmname];
+        }        
+        return $result;
     }
 
     public function getLangUrl() {

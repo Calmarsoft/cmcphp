@@ -104,6 +104,7 @@ abstract class database {
     abstract public function getdataSource($sqlData);
     /**
      * creates an object for 'table' acccess
+     * @return \cmc\db\datatable
      */
     abstract public function gettable($tablename, $sort=null);
     /**

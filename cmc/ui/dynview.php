@@ -120,6 +120,7 @@ class dynview extends view implements ISerializable {
             if ($frame) {
                 if (!$frame->bIsSessionValid($this, $this->_sess))
                     return;
+                $frame->viewAttach($this);
                 $frame->viewPreUpdate($this, $this->_sess);
             }
         }

@@ -233,9 +233,11 @@ class sess implements ISerializable {
         $view = $this->_app->getRequestBaseView($view_path, $view_pathloc, $lang);
 
         if ($view && $view->getResponseCode() != 303) {
-            $this->_sesviews[$view_pathloc] = dynview::dynview($this, $view);  // dynamic version 
+            $dyn = dynview::dynview($this, $view);  // dynamic version 
+            if ($dyn->ValidForSave() && $dyn->getResponseCode() == 200) // cache only views loading nicely
+                $this->_sesviews[$view_pathloc] = $dyn;
 
-            return $this->_sesviews[$view_pathloc];
+            return $dyn;
         } else
             return $view;
     }
@@ -380,7 +382,7 @@ class sess implements ISerializable {
 
     /**
      * linked data enviroment
-     * @return dataenv
+     * @return \cmc\db\dataenv
      */
     public function getDataEnv() {
         return null;
@@ -412,8 +414,17 @@ class sess implements ISerializable {
      * @return string|false
      */
     function getParams() {
-        return $this->_request->getParams($this->_app);
+        return $this->_request->getParams();
     }
+    /**
+     * retrieves a request parameter
+     * 
+     * @param cmc\app $app
+     * @return string|false
+     */
+    function getParam($paramname) {
+        return $this->_request->getParam($paramname);
+    }    
 
     /**
      * retrieves the request object

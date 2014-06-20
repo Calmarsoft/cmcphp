@@ -45,9 +45,9 @@ class cache {
             return sys_get_temp_dir() . '/' . $key . '.tmp';
         else {
             if (substr(config::CACHE_path, 0, 1)==='/')
-                return config::CACHE_path . $key . '.tmp';
+                return \realpath(config::CACHE_path) . '/'. $key . '.tmp';
             else
-                return request::rootphyspath() . '/' . config::CACHE_path . $key . '.tmp';
+                return \realpath(request::rootphyspath() . '/' . config::CACHE_path) . '/' . $key . '.tmp';
         }
     }
     /**

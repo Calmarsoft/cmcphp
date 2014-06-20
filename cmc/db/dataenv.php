@@ -87,7 +87,7 @@ abstract class dataenv {
      * default implementation takes value from config::val('db')['database']
      * @return string
      */
-    public function getDatabase() {
+    public function getDatabaseName() {
         if (array_key_exists('database', config::val('db')))
             return config::val('db')['database'];
         return null;
@@ -132,7 +132,7 @@ abstract class dataenv {
      * 
      * default implementation takes from config::val('db')['server']
      */
-    public function getServer() {
+    public function getServerName() {
         if (array_key_exists('server', config::val('db')))
             return config::val('db')['server'];
     }
@@ -150,7 +150,7 @@ abstract class dataenv {
 
         if (!$this->_ourDB) {
             $factory = $this->getDatabaseFactory();
-            $this->_ourDB = $factory::createdatabase($this->getDatabase(), $this->getServer());
+            $this->_ourDB = $factory::createdatabase($this->getDatabaseName(), $this->getServerName());
             if ($this->_ourDB) {
                 $this->_ourDB->setLogin($this->getLogin(), $this->getPassword());
                 $this->_ourDB->setPort($this->getPort());
