@@ -51,6 +51,7 @@ class app implements ISerializable {
 
     const APP_appobj = 'APP_appobj';
     const _refreshSecs = 60;
+    const _expireSecs = 3600;
 
     private $APP_mark;
     protected $dft_Parameters = array(
@@ -93,7 +94,16 @@ class app implements ISerializable {
         if (config::APP_cache) {
             self::$_serialkey = self::APP_appobj . md5(request::rootpath_short() . config::APP_guid . (request::isSSL() ? 'S' : ''));
             if (cache::global_exists(self::$_serialkey)) {
-                self::$_theApp = cache::global_get(self::$_serialkey);
+                $app = cache::global_get(self::$_serialkey);
+                if (microtime(true) - $app->_lastwrite < self::_expireSecs)
+                    self::$_theApp = $app;
+                else {
+                    foreach ($app->_appviews_ser as $viewkey => $view) {
+                        cache::global_remove(self::$_serialkey . '_' . $viewkey);
+                     }
+                     cache::global_remove(self::$_serialkey);
+                     $app = null;
+                }
             }
         }
 
@@ -430,10 +440,15 @@ class app implements ISerializable {
             if (array_key_exists($view_pathloc, $this->_appviews_ser) && cache::global_exists(self::$_serialkey . '_' . $view_pathloc)) {
                 $view = cache::global_get(self::$_serialkey . '_' . $view_pathloc);
                 if (\is_a($view, view::className)) {
-                    $view->setApp($this);
-                    $view->OnUnserialize();
-                    $this->_appviews[$view_pathloc] = $view;
-                    $reload = false;
+                    if (microtime(true) - $this->_appviews_ser[$view_pathloc]['_lastwrite']< self::_expireSecs) {
+                        $view->setApp($this);
+                        $view->OnUnserialize();
+                        $this->_appviews[$view_pathloc] = $view;
+                        $reload = false;
+                    } else {
+                        cache::global_remove(self::$_serialkey . '_' . $view_pathloc);
+                        unset($this->_appviews_ser[$view_pathloc]);
+                   }                    
                 }
             }
         }
@@ -489,6 +504,9 @@ class app implements ISerializable {
             }
             $view = $this->_sess->getRequestView();
             $btimeBanner = config::TIME_Banner($req->getPath($this));
+            if ($btimeBanner && $this->_sess->getDataEnv()) {
+                $this->_sess->getDataEnv()->enableBenchMarking();
+            }
 
             if ($view) {
                 if ($btimeBanner)
@@ -565,6 +583,9 @@ class app implements ISerializable {
                     printf('<style>.cmc-timings {float: left;margin-left: 10px;margin-top:0px;font-size:small;}</style>');
                     printf('<br><pre class="cmc-timings">parse time=%.03f ms<br>', $parset);
                     printf('Execution time=%.03f ms, Total=%.03f ms<br>Memory max uage=%.02fMB', $exect, $totalt, $mem);
+                    if ($this->_sess->getDataEnv()) {
+                        echo($this->_sess->getDataEnv()->getExecutionText());
+                    }
                 }
                 ob_end_flush();
             }

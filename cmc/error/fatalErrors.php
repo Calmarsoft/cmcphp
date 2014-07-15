@@ -49,16 +49,17 @@ class fatalErrors {
      * @param type $text
      * @return type
      */
-    private static function translate($sess, $text) {
+    private static function translate($sess, $text, $args=null) {
+        $trans = null;
         if ($sess != null) {
-            $result = $sess->translate($text);
-            if ($result) 
-                return $result;
+            $trans = $sess->getTranslation();
+        } 
+        if ($trans===null) {
+            // no session: get language from client
+            $lang=request::getAcceptPrimaryLang();
+            $trans = new translation($lang);
         }
-        // no session: get language from client
-        $lang=request::getAcceptPrimaryLang();
-        $trans = new translation($lang);
-        return $trans->getText($text);
+        return $trans->fmtText($text, $args);
     }
     static function callstack($e, $popcnt=1) {
             $trace = $e->getTraceAsString();
@@ -90,7 +91,7 @@ class fatalErrors {
      * @param $stack if >0 the call stack is shown, and pops the specified number at top
      * @param string ... optional parameters
      */
-    static function trigger($sess, $errorId, $stack=1) {
+    static function trigger($sess, $errorId, $stack=1) {                
         $e = new \Exception();
         $args = func_get_args();
         array_splice($args, 2, 0, array($e));
@@ -98,30 +99,12 @@ class fatalErrors {
     }
     
     static private function int_trigger($sess, $errorId, $e, $stack=-1) {
-        $msg = self::translate($sess, 'fatal'.$errorId);
-        $args = func_get_args();
+        $args = func_get_args();                
         array_shift($args);array_shift($args);array_shift($args);array_shift($args); // strip 4 regular args
         $body = self::translate($sess, 'fatalbody');
-        
-        $repl = array();$repl_str = array();
-        foreach ($args as $key=>$arg) {
-                if (is_scalar($arg) ) {
-                    array_push($repl, '%'.($key+1));
-                    array_push($repl_str, str_replace("\n", '<br>', $arg));
-                } else if (is_array($arg)) {
-                    $text = '';
-                    foreach ($arg as $item) {
-                        if (is_scalar($item)) {
-                            if ($text!='') $text.='<br>';
-                            $text .= $item;
-                        }
-                    }
-                    array_push($repl, '%'.($key+1));
-                    array_push($repl_str, $text);
-                }
-        }
-        $text = str_replace($repl, $repl_str, $msg);
-        
+
+        $text = self::translate($sess, 'fatal'.$errorId, $args);
+     
         if ($stack!==-1) $text .= str_replace('%1', self::callstack ($e, $stack), self::translate($sess, 'fatalcontext'));
         //ob_clean();
         //TODO: check ob status

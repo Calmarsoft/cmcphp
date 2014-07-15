@@ -101,13 +101,14 @@ class dynview extends view implements ISerializable {
     public function hasDynSect($cmcId) {
         return array_key_exists($cmcId, $this->_sections);
     }
+
     /**
      * @return true
      */
     public function is_dynamic() {
         return true;
     }
-    
+
     /**
      * updates the dynamic part of the view by updating the DOM from the properties
      * on each dynamic frame     
@@ -144,8 +145,6 @@ class dynview extends view implements ISerializable {
         foreach ($data as $frame => $framedata) {
             $f = $this->_sess->getDynFrameByName($frame);
             if ($f) {
-                if (!$f->bIsSessionValid($this, $this->_sess))
-                    return;
                 $f->POSTupdatedata($this, $framedata);
             }
         }
@@ -164,9 +163,30 @@ class dynview extends view implements ISerializable {
         $f = $this->_sess->getDynFrameByName($event['frame']);
         if (!$f)
             return;
-        if (!$f->bIsSessionValid($this, $this->_sess))
-            return;
         $f->POSTfireEvent($this, $event);
+    }
+
+    private function bIsValidSessionPOST($postObject) {
+        $frames = array();
+        $result = true;
+        if (array_key_exists('data', $postObject)) {
+            foreach ($postObject['data'] as $frame => $framedata) {
+                $frames[$frame] = 0;
+            }
+        }
+        if (array_key_exists('event', $postObject)) {
+            if (array_key_exists('frame', $postObject['event']))
+                $frames[$postObject['event']['frame']] = 0;
+        }
+        foreach ($frames as $frame => $i) {
+            $f = $this->_sess->getDynFrameByName($frame);
+            if (!$f->bIsSessionValid($this, $this->_sess)) {
+                $result = false;
+                break;
+            }
+            $f->viewAttach($this);
+        }        
+        return $result;
     }
 
     /**
@@ -203,18 +223,21 @@ class dynview extends view implements ISerializable {
             $this->_ajax = false;
         }
         if ($postObject) {
-            // first, update properties
-            if (array_key_exists('data', $postObject))
-                $this->POSTupdatedata($postObject['data']);
-            // now trigger events
-            if (array_key_exists('event', $postObject))
-                $this->POSTfireEvent($postObject['event']);
+            if ($this->bIsValidSessionPOST($postObject)) {
+                // first, update properties
+                if (array_key_exists('data', $postObject))
+                    $this->POSTupdatedata($postObject['data']);
+                // now trigger events
+                if (array_key_exists('event', $postObject))
+                    $this->POSTfireEvent($postObject['event']);
+            }
         }
 
         if (!$this->_ajax) {
             $this->viewUpdate();
         }
     }
+
     /**
      * returns if answer is ajax 
      * @return boolean
@@ -222,6 +245,7 @@ class dynview extends view implements ISerializable {
     public function isAjax() {
         return $this->_ajax;
     }
+
     /**
      * main POST answer computing method
      * @return type
@@ -266,14 +290,43 @@ class dynview extends view implements ISerializable {
      * @param string $new_location
      * @param bool $bReplace if true the original location will be hidden and won't be present in the navigator's history
      */
-    public function setRedirect($new_location, $bReplace = false) {
-        if ($new_location[0] == '/') {
-            $new_location = request::rootpath() . substr($new_location, 1);
-        }
+    private function setRedirectInternal($new_location, $bReplace) {
         if ($bReplace)
             $this->_redirect = $new_location;
         else
             $this->_navigate = $new_location;
+
+        return $new_location;
+    }
+
+    /**
+     * defines a redirect answer
+     * 
+     * @param string $new_location
+     * @param bool $bReplace if true the original location will be hidden and won't be present in the navigator's history
+     */
+    public function setRedirect($new_location, $bReplace = false) {
+        if ($new_location[0] == '/') {
+            $new_location = request::rootpath() . substr($new_location, 1);
+        }
+        return $this->setRedirectInternal($new_location, $bReplace);
+    }
+
+    /**
+     * defines a 'back' redirection
+     * 
+     * @param string $dft_location value of location if history is not sufficient
+     */
+    public function setRedirectBack($dft_location, $bReplace = false) {
+        $steps = 1;
+        $new_location = $this->_sess->getHistoryLocation($steps);    // ask one step back
+        if ($new_location === null)
+            return $this->setRedirect($dft_location, $bReplace);
+
+        if ($steps !== 0)
+            $this->_sess->truncHistoryLocation($steps);
+
+        return $this->setRedirectInternal($new_location, $bReplace);
     }
 
     /**

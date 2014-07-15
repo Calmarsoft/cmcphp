@@ -56,6 +56,7 @@ class translation {
                       'fatalDatabaseExceptionPREP' => 'prepare failed<br>A database statement prepare failed with error code %3 and message "%4"',
                       'fatalDatabaseExceptionNTAB' => 'the table `%1` was not found in the database',
                       'fatalDatabaseExceptionUPDATE' => 'the update did not alter the expected number of rows (%3 updated)',
+                      'fatalDatabaseExceptionINSERT' => 'the insert of data failed',            
                       'fatalDatabaseExceptionUPDATE0' => 'the update altered no rows',
                       'fatalbody' => <<<EOT
                         <html><head><title>CMC Framework - Fatal error!</title>
@@ -88,10 +89,11 @@ EOT
                       'fatalnoscriptname2' => 'Variable $_SERVER["SCRIPT_NAME"] ou $_SERVER["SCRIPT_NAME_ORIG"]  non disponible',
                       'fatalcallback_wrongstate' => 'Un callback serveur ne peut être défini à ce stade. Essayer de déplacer le code d\'appel au niveau de dynframe::viewInitialUpdate',
                       'fatalcontext' => '<br><small>Contexte:<br><pre>%1</pre></small>',
-                      'fatalDatabaseException' => '%1<br>exception de base de donnée non gérée de code %2<br>La base de donnée a retourné le code d\'erreur %3, et le message "%4"',
+                      'fatalDatabaseException' => '%1<br>exception de base de données non gérée de code %2<br>La base de donnée a retourné le code d\'erreur %3, et le message "%4"',
                       'fatalDatabaseExceptionPREP' => 'échec de requête failed<br>Une requête a échoué avec le code d\'erreur %3 et le message "%4"',
                       'fatalDatabaseExceptionNTAB' => 'la table `%1` n\'a pas été trouvée dans la base de données',
                       'fatalDatabaseExceptionUPDATE' => 'la mise à jour n\'a pas affecté le nombre attendu d\'enregistrements (%3 enregistrements modifiés)',
+                      'fatalDatabaseExceptionINSERT' => 'l\'insertion de données a échoué',
                       'fatalDatabaseExceptionUPDATE0' => 'la mise à jour n\'a pas affecté aucun enregistrement',
                       'fatalbody' => <<<EOT
                         <html><head><title>CMC Framework - Erreur fatale!</title>
@@ -138,6 +140,33 @@ EOT
        else
             $result = $key;
        return $result;
+    }
+    
+    function fmtText($key, $args)
+    {
+        $utext = $this->getText($key);
+        if ($args==null)
+            return $utext;
+
+        $repl = array();$repl_str = array();
+        foreach ($args as $idx=>$arg) {
+                if (is_scalar($arg) || ($arg===null)) {
+                    array_push($repl, '%'.($idx+1));
+                    array_push($repl_str, str_replace("\n", '<br>', $arg===null?'(null)':$arg));
+                } else if (is_array($arg)) {
+                    $argtext = '';
+                    foreach ($arg as $item) {
+                        if (is_scalar($item)) {
+                            if ($argtext!='') $argtext.='<br>';
+                            $argtext .= $item;
+                        }
+                    }
+                    array_push($repl, '%'.($idx+1));
+                    array_push($repl_str, $argtext);
+                }
+        }
+        $text = str_replace($repl, $repl_str, $utext);        
+        return $text;
     }
     /**
      * returns the current language

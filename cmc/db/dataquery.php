@@ -114,5 +114,9 @@ abstract class dataquery implements datasource {
     public function valid() {
         return ($this->_currentrow!=null);
     }
+    
+    public function dataenv() {
+        return $this->_db->dataenv();       
+    }
 }
 

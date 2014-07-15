@@ -92,8 +92,8 @@ abstract class dynframe extends frame {
      * dynamic update
      * override this function to make process each time the view is refreshed
      *  (not called when class is used for POST processing; you need to use specific overrides or handlers for this)
-     * @param type $view
-     * @param type $sess
+     * @param \cmc\ui\view $view
+     * @param \cmc\sess $sess
      */
     public function viewUpdate($view, $sess) {
         

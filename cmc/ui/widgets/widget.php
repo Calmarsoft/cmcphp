@@ -88,6 +88,7 @@ abstract class widget implements IClonablep, ISerializablep {
     protected $_properties;     // all widget properties such as caption, color, additional classes, ...
     protected $_constants;      // defines widget user-defined constants, which can be referenced later
     protected $_bDynamic;
+    private $_dyncode = false;
     private $_ajaxAnswer;
     private $_widgetListeners;
     protected $_actualscript;
@@ -124,9 +125,11 @@ abstract class widget implements IClonablep, ISerializablep {
     public function setFrame(frame $frame) {
         $this->_frame = $frame;
     }
+
     /*
      * retrieves underlying frame
      */
+
     public function getFrame() {
         return $this->_frame;
     }
@@ -171,6 +174,13 @@ abstract class widget implements IClonablep, ISerializablep {
     public function viewAttach(view $view) {
         if ($this->_objxpath != '') {
             $this->_currwview = $this->_wviews->initDOMElement($view, $this->_frame, $this->_objxpath);
+            if ($this->_currwview!==null) {
+                foreach ($this->_currwview->getCltProps() as $propname => $propval) {
+                    if ($propval != null)
+                        $this->_properties[$propname] = $propval;
+                    //var_dump($propname, $propval);
+                }
+            }
         } else
             $this->_currwview = null;
     }
@@ -191,7 +201,7 @@ abstract class widget implements IClonablep, ISerializablep {
         return $this->_frame->AddEventListener($eventname, $this->getName(), $cb);
     }
 
-    protected function OnWidgetEvent($eventName) {        
+    protected function OnWidgetEvent($eventName) {
         if (array_key_exists($eventName, $this->_widgetListeners)) {
             $arguments = func_get_args();
             foreach ($this->_widgetListeners[$eventName] as $cb) {
@@ -329,6 +339,7 @@ abstract class widget implements IClonablep, ISerializablep {
                     $this->DOMRemoveAttr('hidden');
                 else
                     $this->DOMUpdateAttr('hidden');
+                return true;
                 break;
             case 'enabled':
                 if ($propval)
@@ -338,6 +349,7 @@ abstract class widget implements IClonablep, ISerializablep {
                 $this->DOMRemoveAttr('disabled');
                 if (!$propval)
                     $this->DOMUpdateAttr('disabled');
+                return true;
                 break;
             default:
                 return false;
@@ -400,27 +412,26 @@ abstract class widget implements IClonablep, ISerializablep {
     private function applyProperties($view, $bDom) {
         if (!$bDom) {
             $this->_ajaxAnwer = array();
-            $success = true;
         }
         if (!$this->_currwview)
             return;
 
         foreach ($this->_properties as $propname => $propval) {
-            if ($bDom || $this->_currwview->CltProp($propname) === null || $this->_currwview->CltProp($propname) !== $propval) {
-                $success = true;
-
-                if ($bDom)
-                    $success = $this->applyPropertyDOM($view, $propname, $propval);
-                else {
-                    $val = $this->getAjaxPropVal($propname);
-                    if ($val !== null)
-                        $this->_ajaxAnswer[$propname] = $val;
+            $success = false;
+            if ($bDom) {
+                $success = $this->applyPropertyDOM($view, $propname, $propval);
+            } else {
+                $val = $this->getAjaxPropVal($propname);
+                $clt = $this->_currwview->CltProp($propname);
+                if ($val !== $clt) {
+                    $this->_ajaxAnswer[$propname] = $val;
+                    $success = true;
                 }
-
-                if ($success)
-                    $this->_currwview->SetCltProp($propname, $propval);
             }
+            if ($success)
+                $this->_currwview->SetCltProp($propname, $propval);
         }
+
         if ($bDom)
             $this->setDataStateAjax($view, false);
         else
@@ -449,9 +460,6 @@ abstract class widget implements IClonablep, ISerializablep {
     public function viewPreUpdate(dynview $view) {
         if ($this->_frame->is_dynamic())
             $this->_bDynamic = true;
-        
-        if ($this->_wviews)
-            $this->_currwview = $this->_wviews->restoreDOMElem($view);
     }
 
     /**
@@ -460,9 +468,12 @@ abstract class widget implements IClonablep, ISerializablep {
      * @param \cmc\dynview $view
      */
     public function viewUpdate(dynview $view) {
+        /* echo "viewUpdate ".$this->_name;var_dump($this->_actualscript, $this->_bDynamic);
+          $this->_actualscript = false; */
+
         $this->applyProperties($view, true);
         $script = $this->getScriptCode();
-        if (is_string($script) && ($script!==''))
+        if (is_string($script) && ($script !== ''))
             $view->addScriptCode(trim($script, ' '));
     }
 
@@ -520,8 +531,9 @@ abstract class widget implements IClonablep, ISerializablep {
 //        var_dump($this->_name . " / " . $this->_domid.": $propname => $newval");
 //        xdebug_print_function_stack();
         $this->_properties[$propname] = $newval;
-        if ($this->_currwview && is_array($newval))
+        if ($this->_currwview) {    // we are on visual, so client property will be resync
             $this->_currwview->SetCltProp($propname, null);
+        }
     }
 
     // direct datasource rows into the property
@@ -532,6 +544,8 @@ abstract class widget implements IClonablep, ISerializablep {
      * @param \cmc\datasource $ds
      */
     public function setPropertyDatasource($propname, datasource $ds) {
+        if (!$this->_currwview || !$this->_currwview->GetDOMNode())
+            return;
         $data = array();
         foreach ($ds as $line) {
             $dline = array();
@@ -555,6 +569,8 @@ abstract class widget implements IClonablep, ISerializablep {
      * @param type $query
      */
     public function setPropertyQuery(sess $sess, $propname, $query) {
+        if (!$this->_currwview || !$this->_currwview->GetDOMNode())
+            return;
         $de = $sess->getDataEnv();
         if ($de) {
             $ds = $de->getQueryDS($query);
@@ -725,6 +741,7 @@ abstract class widget implements IClonablep, ISerializablep {
     public function bDynamic() {
         return $this->_bDynamic;
     }
+
     /**
      * forces the dynamic status
      * (can be false in a static frame and simple component like label)
@@ -732,6 +749,7 @@ abstract class widget implements IClonablep, ISerializablep {
     public function bSetDynamic() {
         $this->_bDynamic = true;
     }
+
     /**
      * clears dynamic status to false
      * (useful to avoid javascript dependencies, if no object javascript interaction is needed)
@@ -739,7 +757,7 @@ abstract class widget implements IClonablep, ISerializablep {
     public function bClearDynamic() {
         $this->_bDynamic = false;
     }
-    
+
     /**
      *  gets JavaScript Snipset to add in the document.ready() section - creation, client side validation, ajax update -
      */
@@ -761,6 +779,7 @@ abstract class widget implements IClonablep, ISerializablep {
                     '\'' . $obj . '\'' . $parms . ')' .
                     $this->_composcript . ';';
         }
+        //echo "gSC ". $this->_name;var_dump($this->_actualscript);
         return $this->_actualscript;
     }
 
@@ -797,15 +816,20 @@ abstract class widget implements IClonablep, ISerializablep {
      */
     public function addValidation() {
         $code = '.validate(';
+        $fctv = null;
         $cnt = 0;
         foreach (func_get_args() as $arg) {
-            if ($cnt > 0)
+            if ($cnt > 0) {
+                if ($fctv === 'cmc.valid.equals')
+                    $arg = '\'' . \quoted_printable_encode($arg) . '\'';
                 $code .=',' . $arg;
+            }
             else {
                 if (!strchr($arg, '.'))
-                    $code .= 'cmc.valid.' . $arg;
+                    $fctv = 'cmc.valid.' . $arg;
                 else
-                    $code .= $arg;
+                    $fctv = $arg;
+                $code .= $fctv;
             }
             $cnt++;
         }
@@ -820,35 +844,36 @@ abstract class widget implements IClonablep, ISerializablep {
     public function addScriptCode($code) {
         $this->_composcript .= $code;
         $this->_actualscript = false;
+        if ($this->bDynamic())
+            $this->_dyncode = true;
     }
 
     // when serialized with the app
     public function OnSerialize() {
         if ($this->_wviews)
             $this->_wviews->OnSerialize();
+
         $this->_ajaxAnswer = null;
-        
-        if (\cmc\app()->getSession()==null) {
-            $this->_actualscript = '';            
-        } else if ($this->bDynamic()) {
-            $this->_actualscript = true;
-            $this->_composcript = '';
+        $this->_currwview = null;
+
+        if (\cmc\app()->getSession() == null) {
+            //   echo "SerA ".$this->_name;var_dump($this->_actualscript, $this->_bDynamic);
+            $this->_actualscript = '';
+        } /* else if ($this->bDynamic()) {
+          //   echo "SerB ".$this->_name;var_dump($this->_actualscript, $this->_bDynamic);
+          //echo 'Ser '.$this->_name;var_dump($this->_actualscript);
+          $this->_actualscript = $this->_dyncode;
+          $this->_composcript = '';
+          } */ else {
+            //   echo "SerC ".$this->_name;var_dump($this->_actualscript, $this->_bDynamic);
+            $this->getScriptCode();
         }
-        else
-            $this->getScriptCode();    
-        
         $this->_properties = array();       // data remains in 'clt' part
     }
 
     public function OnUnserialize() {
         if ($this->_wviews)
             $this->_wviews->OnUnSerialize();
-        if ($this->_properties !== null && $this->_currwview) {
-            foreach ($this->_currwview->getCltProps() as $propname => $propval) {
-                $this->_properties[$propname] = $propval;
-                //var_dump($propname, $propval);
-            }
-        }
 
 //        xdebug_print_function_stack();
 //        var_dump($this);

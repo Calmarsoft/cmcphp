@@ -42,13 +42,14 @@ abstract class databasefactory {
  * @version       0.9
  */
 abstract class database {
-    protected $_user, $_passwd, $_server, $_database, $_port;
+    protected $_de, $_user, $_passwd, $_server, $_database, $_port;
     protected $_lasterror;   
     /**     
      * @param string database name if any
      * @param string server name, IP address, ...
      */
-    public function __construct($database, $server) {   
+    public function __construct($dataenv, $database, $server) {   
+        $this->_de = $dataenv;
         $this->_database = $database;
         $this->_server = $server;
     }
@@ -80,6 +81,10 @@ abstract class database {
      */
     public function setPort($port) {
         $this->_port = $port;
+    }
+    
+    public function dataenv() {
+        return $this->_de;        
     }
     
     /**

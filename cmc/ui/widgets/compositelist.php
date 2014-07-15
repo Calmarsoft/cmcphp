@@ -28,7 +28,7 @@ namespace cmc\ui\widgets;
 require_once('widget.php');
 require_once('cmc/db/datasource.php');
 
-use cmc\ui\frame, cmc\ui\view, cmc\ui\dynview, cmc\config;
+use cmc\ui\frame, cmc\ui\view, cmc\ui\dynview, cmc\config, cmc\core\ui\material;
 
 /**
  * factory for compositelist widget, the general purpose list widget
@@ -149,7 +149,9 @@ class compositelist extends widget {
         if ($data)
         foreach ($data as $line) {
             $newnode = null;
-            foreach ($this->_composite_map as $path => $key) {
+            foreach ($this->_composite_map as $path => $keym) {
+                $html = false;
+                
                 if ($newnode == null) {
                     $newnode = $linemodel->cloneNode(true);
                     $this->OncompositeRowDOM($line, $newnode);
@@ -160,6 +162,11 @@ class compositelist extends widget {
                     $this->refdata = $line;
                     // allows ${field} in the "value" part
                     $cntrepl = 0;
+                    if ($keym[0]==='!') {
+                        $key = substr($keym, 1);
+                        $html = true;
+                    } else
+                        $key = $keym;
                     $val = preg_replace_callback(self::matchVar, array($this, 'substData'), $key, -1, $cntrepl);
                     if ($cntrepl == 0) {
                         if (array_key_exists($key, $line))
@@ -183,14 +190,21 @@ class compositelist extends widget {
                                     }
                                 }
                             }
-                            else
-                                $item->nodeValue = $val;
+                            else {
+                                if (!$html)
+                                    $item->nodeValue = $val;
+                                else
+                                    material::DOMsetHtml($item, $val);
+                            }
                             break;
                         case XML_ATTRIBUTE_NODE:
                             $item->value = $val;
                             break;
                         case XML_TEXT_NODE:
-                            $item->data = $val;
+                            if (!$html)
+                                $item->data = $val;
+                            else
+                                material::DOMsetHtml($item, $val);                            
                             break;
                     }
                 }
@@ -295,7 +309,7 @@ class compositelist extends widget {
     protected function applyPropertyDOM($view, $propname, $propval) {
         switch ($propname) {
             case self::prop_Data:
-                if ($this->getFrame()->is_dynamic() == $view->is_dynamic())
+            //    if ($this->getFrame()->is_dynamic() == $view->is_dynamic())
                     return $this->applyCompositeDOM($view, $propval);
         }
 
@@ -528,10 +542,10 @@ class compositelist extends widget {
         }
         // remove data if dom is the valid part
         if ($this->_currwview) {
-            if ($this->_dataValid==='dom' || !config::SESS_save_mat) {
+            //if ($this->_dataValid==='dom' || !config::SESS_save_mat) {
                 if (array_key_exists(self::prop_Data, $this->_properties))
                   $this->_currwview->SetCltProp(self::prop_Data, null);
-            }
+            //}
         }        
 //        if (array_key_exists(self::prop_Data, $this->_properties))
 //            $this->_properties[self::prop_Data] = null;

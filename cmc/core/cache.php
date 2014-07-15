@@ -77,6 +77,18 @@ class cache {
         return file_exists(realpath($storepath));
     }
     /**
+     * removes a cache entry
+     * 
+     * @param string key value
+     */
+    static function global_remove($key)
+    {
+        $key = urlencode(strtr($key,'/','.'));
+        $storepath = self::store_path($key);
+        if (file_exists(realpath($storepath)))
+            unlink(realpath($storepath));
+    }
+    /**
      * retrieves a variable from the cache
      * 
      * @param string key value

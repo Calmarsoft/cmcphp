@@ -37,7 +37,7 @@ use cmc\db\dataquery;
  * @version       0.9
  */
 class dataquery_mysqli extends dataquery  {
-    private $_stmt;
+    private $_stmt;private $_sqlText;
     /**
      *
      * @var boolean true if execute is needed
@@ -79,7 +79,9 @@ class dataquery_mysqli extends dataquery  {
         if (!$this->_stmt)
             throw new DatabaseException_mysqli($this, 'BADCTX', 'wrong context: statement not valid');      
         if ($this->_bNeedExec || $bForce) {
+            $this->executionBegin();
             $result = $this->_stmt->execute();
+            $this->executionLog();
             $this->_bNeedExec = false;
         }
         return $result;
@@ -143,7 +145,25 @@ class dataquery_mysqli extends dataquery  {
         return $this->_currentrow;
     }
 
+    /**
+     * information only: statement text
+     * @param string $text
+     */
+    public function setSqlText($text) {
+        $this->_sqlText = $text;
+    }
     
+    private function executionBegin() {
+        if (!$this->dataenv()->benchMarking())
+            return;
+        $this->dataenv()->executionBegin();
+    }
+            
+    private function executionLog() {
+        if (!$this->dataenv()->benchMarking())
+            return;
+        $this->dataenv()->executionLog($this->_sqlText, $this->_stmt->affected_rows);
+    }
 
 }
 

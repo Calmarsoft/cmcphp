@@ -136,6 +136,44 @@ class material implements IClonable, ISerializable {
     }
 
     /**
+     * inserts html data in place of a given node
+     * 
+     * @param type $elem
+     * @param type $html_code
+     */
+    public static function DOMsetHtml($node, $html_code) {
+        $cleanStart = null;
+        $elem = $node;
+        $new_nodes = material::getCloneFromSource($html_code, $elem->ownerDocument);
+        if ($new_nodes) {
+            $orglen = $elem->childNodes->length;
+            $idx = 0;
+            foreach ($new_nodes as $new_node) {
+                if ($idx >= $orglen) {
+                    $node->appendChild($new_node);
+                } else {
+                    $elem->replaceChild($new_node, $elem->childNodes->item($idx));
+                }
+                $idx++;
+            }
+            $cleanStart = $idx;
+        } else {
+            if ($elem->childNodes->length != 0) {
+                $cleanStart = 0;
+            }
+        }
+        if ($cleanStart != null) {
+            $clean = array();
+            for ($i = $cleanStart; $i < $elem->childNodes->length; $i++) {
+                array_push($clean, $elem->childNodes->item($i));
+            }
+            foreach ($clean as $cleanitem) {
+                $elem->removeChild($cleanitem);
+            }
+        }
+    }
+    
+    /**
      * returns the list of Nodes for given classname
      * @param string classname
      * @return DOMNodeList
@@ -341,7 +379,7 @@ class material implements IClonable, ISerializable {
     public function addScriptCode($scriptCode) {
         if (!isset($scriptCode) || strlen($scriptCode) == 0)
             return;
-        //echo "<pre>$scriptCode</pre>";//xdebug_print_function_stack();
+        //echo "addScriptCode ".$this->_bDynamic;var_dump($scriptCode);
         if ($this->_bDynamic)
             $this->_customscriptcode_dyn .= $scriptCode;
         else
@@ -605,6 +643,7 @@ EOT
                 $jsOriginalCode = $this->prepDelayedJSCode($view);
             else {
                 $position_root = $this->getScriptPosition();
+                if ($position_root===null) return;   //unexpected
                 if ($position_root->length>0) {
                     $position = $position_root->item(0);
                     $len = $position->childNodes->length;

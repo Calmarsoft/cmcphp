@@ -118,36 +118,7 @@ class widgetView {
      */
     public function DOMSetHtml($html_code) {
         if (isset($this->_domElement) && $this->_domElement && $this->_domElement->nodeType) {
-            // parsing de l'html
-            $cleanStart = null;
-            $elem = $this->_domElement;
-            $new_nodes = material::getCloneFromSource($html_code, $elem->ownerDocument);
-            if ($new_nodes) {
-                $orglen = $elem->childNodes->length;
-                $idx = 0;
-                foreach ($new_nodes as $new_node) {
-                    if ($idx >= $orglen) {
-                        $this->_domElement->appendChild($new_node);
-                    } else {
-                        $elem->replaceChild($new_node, $elem->childNodes->item($idx));
-                    }
-                    $idx++;
-                }
-                $cleanStart = $idx;
-            } else {
-                if ($elem->childNodes->length != 0) {
-                    $cleanStart = 0;
-                }
-            }
-            if ($cleanStart != null) {
-                $clean = array();
-                for ($i = $cleanStart; $i < $elem->childNodes->length; $i++) {
-                    array_push($clean, $elem->childNodes->item($i));
-                }
-                foreach ($clean as $cleanitem) {
-                    $elem->removeChild($cleanitem);
-                }
-            }
+            material::DOMsetHtml($this->_domElement, $html_code);
         }
     }
     /**
@@ -301,9 +272,7 @@ class widgetView {
     /**
      * called when serialized with the app
      */
-    public function OnSerialize() {
-        if ($this->_domElement!=null)
-            $this->_domElement_path = $this->_domElement->getNodePath();               
+    public function OnSerialize() {         
         $this->_domElement = null; 
         
         if ($this->_linemodel && !$this->_linemodel_ser) {

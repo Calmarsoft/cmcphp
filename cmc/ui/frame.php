@@ -149,6 +149,22 @@ abstract class frame {
         }
     }
     /**
+     * definitive elements removal
+     * @param \cmc\ui\view $view
+     * @param string $class classname
+     */
+    public function viewRemoveElements($view, $class) {
+        if (\cmc\config::SESS_save_mat) // not possible in this configuration
+            return;
+        $list = $view->material()->findClassNodes($class);
+        foreach ($list as $l) {
+            try {
+               $l->parentNode->removeChild($l);
+            } catch(\Exception $e) {                
+            }
+        }
+    }
+    /**
      * gets the frame's scripting code
      * @return type
      */

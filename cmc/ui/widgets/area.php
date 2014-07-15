@@ -22,19 +22,41 @@
     You should have received a copy of the GNU General Public License
     along with CMC for PHP.  If not, see <http://www.gnu.org/licenses/>.
 **/
+namespace cmc\ui\widgets;
+
+require_once('widget.php');
+
+use cmc\ui\frame;
+/**
+ * factory for label widget, with id/xdpath and optional initial caption
+ */
+class areafactory extends widgetfactory {
+    const className=__CLASS__;
+    static function makewidget(frame $frame, $xpath = '', $initial=null)
+    {
+        return new area($frame, $xpath);
+    }
+}
 
 /**
- * include file for adding widgets
+ * label widget
+ * 
+ * can be used in <span>, <div> and various tags containing text
+ * @copyright     Copyright (c) Calmarsoft company (FRANCE) (http://calmarsoft.com)
+ * @link          http://cmc.calmarsoft.com CMC Project
+ * @license       http://www.gnu.org/licenses/ GNU General Public License version 3
+ * @version       0.9
  */
-require_once('cmc/db/dataenv.php');
-require_once('cmc/ui/widgets/area.php');
-require_once('cmc/ui/widgets/button.php');
-require_once('cmc/ui/widgets/compositelist.php');
-require_once('cmc/ui/widgets/input.php');
-require_once('cmc/ui/widgets/select.php');
-require_once('cmc/ui/widgets/checkbox.php');
-require_once('cmc/ui/widgets/label.php');
-require_once('cmc/ui/widgets/link.php');
-require_once('cmc/ui/widgets/menu.php');
-require_once('cmc/ui/widgets/tab.php');
-require_once('cmc/ui/widgets/textarea.php');
+class area extends widget {
+    const factory = areafactory::className;
+    
+    public function __construct($frame, $xpath = '') {
+        parent::__construct($frame, $xpath);       
+        
+        if ($frame->is_dynamic())
+            $this->_bDynamic = true;
+    }
+
+}
+
+

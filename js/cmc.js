@@ -24,14 +24,16 @@
 
 var cmc = function() {
     var _msie;
-    
+
     var frame = function(fname) {
         var widget = function() {
             var jsObj, jsType, wname;
             var props_srv = {}, props = {};
             var valid_fcts = [];
+            var valid_peers = [];
             var validation = false;
-            var valid = false;
+            var valid = true;
+            var bAutoFill = false;
             var parentframe = null;
             var urlattr = ['href', 'src', 'action'];
             var matchvar = /[$]{([a-zA-Z_][a-zA-Z0-9%_\-]*)}|[$]([a-zA-Z][a-zA-Z0-9%_]*)/g;
@@ -59,16 +61,16 @@ var cmc = function() {
                             return false;
                         return true;
                     });
-                    while (args.shift())
-                        ;
+                    while (args.shift()) {
+                    }
                     e = a.shift();
                     while (e) {
                         args.push(e);
                         e = a.shift();
                     }
-                    var formdata=JSON.stringify(jsData);
+                    var formdata = JSON.stringify(jsData);
                     args.push({name: "cmcdata", type: "text", value: formdata});
-                    if (cmc.msie()!==null && cmc.msie()<=8)
+                    if (cmc.msie() !== null && cmc.msie() <= 8)
                         jQuery("input[name='cmcdata']").val(formdata);
                     return true;
                 },
@@ -118,26 +120,28 @@ var cmc = function() {
                                 args[0] = jQuery.extend(args[0], ajaxForm_cmc);
                             else
                                 args[0] = ajaxForm_cmc;
-                        
-                            if (cmc.msie()!==null && cmc.msie()<=8)
+
+                            if (cmc.msie() !== null && cmc.msie() <= 8)
                             {
                                 var form = jsObj.ajaxForm();
-                                if (form !==null && form.find("fieldset").size() === 1)
+                                if (form !== null && form.find("fieldset").size() === 1)
                                 {
                                     var fs = form.find("fieldset");
                                     if (fs.find("input[name='cmcdata']").size() === 0)
                                     {
                                         var df = document.createElement('input');
                                         df['name'] = 'cmcdata';
-                                        if (df['style']!==undefined && df['style']['display']!==undefined)
+                                        if (df['style'] !== undefined && df['style']['display'] !== undefined)
                                             df['style']['display'] = 'none';
                                         fs[0].appendChild(df);
                                     }
                                 }
                             }
-                        }                        
+                        }
                         jsObj[type].apply(jsObj, args);
                     }
+                    if (type === 'input' && jsObj.attr('type') === 'password')
+                        bAutoFill = true;
 
                     this.initprops();
                     return this;
@@ -201,43 +205,96 @@ var cmc = function() {
                         else
                             jsObj.addClass('cmc-invalid');
                     }
+                    var p;
+                    var new_event;
+                    for (p in valid_peers) {
+                        var peer = valid_peers[p];
+                        if (peer.haspeer(this))
+                            continue;
+                        if (!new_event)
+                            new_event = jQuery.extend({}, event);
+                        new_event['currentTarget'] = peer.o()[0];
+                        peer.validate_check(new_event);
+                    }
+
+                    if (!bAutoFill)
+                        parentframe.checkAutoFill(event);
                     parentframe.typingEvent(event);
                     return true;
                 },
+                checkAutoFill: function(event) {
+                    if (bAutoFill) {
+                        var new_event = jQuery.extend({}, event);
+                        new_event['currentTarget'] = jsObj[0];
+                        this.validate_check(new_event);
+                    }
+                }
+                ,
                 valid_status: function() {
                     if (validation)
                         return valid;
                     else
                         return true;
                 },
-                // attach a validation functoin
+                validate_addcb: function(fn) {
+                    if (!validation) {  // if first validation function, attach JS change events
+                        validation = true;
+                        if (jQuery.inArray(jsType, ['input', 'textarea', 'select']) > -1) {
+                            if (jsObj['on']) {
+                                jsObj.on('change', null, this, fn);
+                                jsObj.on('select', null, this, fn);
+                                jsObj.on('keyup', null, this, fn);
+                            } else {
+                                jsObj['change'](this, fn);
+                                jsObj['select'](this, fn);
+                                jsObj['keyup'](this, fn);
+                            }
+                        } else if (jsType === 'checkbox') {
+                            if (jsObj['on'])
+                                jsObj.on('click', null, this, fn);
+                            else
+                                jsObj['click'](this, fn);
+                        }
+                    }
+                },
+                add_validfct: function(fn, args) {
+                    valid_fcts.push({fct: fn, args: args});
+                },
+                add_validpeer: function(peer) {
+                    valid_peers[valid_peers.length] = peer;
+                },
+                haspeer: function(obj) {
+                    return (valid_peers.indexOf(obj) !== -1);
+                },
+                // attach a validation function
                 validate: function(fn) {
-                    if (!jsObj) // object not on current screen!
-                        return;
+                    if (!jsObj) // object not on current screen, ignoring!
+                        return this;
 
                     if (typeof fn === 'function') {
                         var args = Array.prototype.slice.call(arguments, 1, arguments.length);
                         args = Array.prototype.concat.call([this], args);
-                        valid_fcts.push({fct: fn, args: args});
-                        if (!validation) {  // if first validation function, attach JS change events
-                            validation = true;
-                            if (jQuery.inArray(jsType, ['input', 'textarea', 'select']) > -1) {
-                                if (jsObj['on']) {
-                                    jsObj.on('change', null, this, this.validate_check);
-                                    jsObj.on('keyup', null, this, this.validate_check);
-                                } else {
-                                    jsObj['change'](this, this.validate_check);
-                                    jsObj['keyup'](this, this.validate_check);
-                                }
-                            }
-                        }
-                        // update validation status (initial check)
+
+                        this.add_validfct(fn, args);
+                        this.validate_addcb(this.validate_check);
+
+                        /*if (fn===cmc.valid.equals) {
+                         parentframe.w(args[1]).validate(fn, wname);
+                         }*/
+                        // update validation status (initial check with only new function)
                         valid = valid && fn.apply(fn, args);
+
+                        if (fn === cmc.valid.equals) {
+                            var peer = parentframe.w(args[1]);
+                            peer.add_validpeer(this);
+                        }
+
                         if (valid)
                             jsObj.removeClass('cmc-invalid');
                         else
                             jsObj.addClass('cmc-invalid');
                     }
+                    return this;
                 },
                 // pass any method to the inner object
                 option: function() {
@@ -473,6 +530,9 @@ var cmc = function() {
                 fname: function() {
                     return fname;
                 },
+                f: function() {
+                    return parentframe;
+                },
                 show: function() {
                     jsObj.show();
                     return this;
@@ -570,6 +630,8 @@ var cmc = function() {
                 value: function() {
                     if (jsType === 'input' || jsType === 'textarea' || jsType === 'select')
                         return jsObj.val();
+                    if (jsType === 'checkbox')
+                        return this.nodeVal(jsObj);
                     return null;
                 },
                 getdata: function()
@@ -630,8 +692,8 @@ var cmc = function() {
                 applyprops: function() {
                     var propname;
                     for (propname in props) {
-                        if (propname === 'compData') {
-                        }
+                        /*if (propname === 'compData') {
+                         }*/
                         if (jQuery.inArray(propname, ['hdrmap', 'hdrmapkeys']) > -1) {
                         } else {
                             this.onpropchange(propname);
@@ -669,6 +731,9 @@ var cmc = function() {
             },
             clearBusy: function() {
                 is_busy = false;
+            },
+            setBusy: function() {
+                is_busy = true;
             },
             // frame-level post data gathering
             post: function(widgetname, eventname) {
@@ -737,6 +802,11 @@ var cmc = function() {
                         }
                 }
             },
+            checkAutoFill: function(event) {
+                var w;
+                for (w in widgets)
+                    widgets[w].checkAutoFill(event);
+            },
             typingEvent: function(event) {
                 var il;
                 for (il in type_listeners) {
@@ -759,19 +829,40 @@ var cmc = function() {
     return {
         valid: {
             nonEmpty: function(wdg) {
+                cmc.log('cmc.valid.nonEmpty', wdg.name());
                 return (wdg.length() > 0);
             },
             minChars: function(wdg, min) {
+                cmc.log('cmc.valid.minChars', wdg.name());
                 return (wdg.length() >= min);
             },
+            numChars: function(wdg, min, max) {
+                cmc.log('cmc.valid.numChars', wdg.name());
+                return (wdg.length() >= min && wdg.length() <= max);
+            },
+            regex: function(wdg, expr) {
+                cmc.log('cmc.valid.regex', wdg.name() + (typeof expr));
+                return (expr.test(wdg.value()));
+            },
             length: function(wdg, len) {
+                cmc.log('cmc.valid.length', wdg.name());
                 return (wdg.length() === len);
             },
+            equals: function(wdg, wname) {
+                cmc.log('cmc.valid.equals', wdg.name());
+                return (wdg.value() === wdg.f().w(wname).value());
+            },
+            True: function(wdg, wname) {
+                cmc.log('cmc.valid.true', wdg.name());
+                return (wdg.value() === true);
+            },
             email: function(wdg) {
+                cmc.log('cmc.valid.email', wdg.name());
                 var regex = /^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/;
                 return regex.test(wdg.value());
             },
             date: function(wdg) {   // jj/mm/aaaa date check
+                cmc.log('cmc.valid.date', wdg.name());
                 var s = wdg.value();
                 if (typeof (s) === 'string') {
                     var sa = s.split('/');
@@ -786,18 +877,22 @@ var cmc = function() {
                 return false;
             },
             hostname: function(wdg) {
+                cmc.log('hostname', wdg.name());
                 var regex = /^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*$/;
                 return regex.test(wdg.value());
             },
             ipv4: function(wdg) {
+                cmc.log('ipv4', wdg.name());
                 var regex = /^(([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))$/;
                 return regex.test(wdg.value());
             },
             ipv6: function(wdg) {
+                cmc.log('ipv6', wdg.name());
                 var regex = /(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]).){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]).){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))/;
                 return regex.test(wdg.value());
             },
             iptarget: function(wdg) {
+                cmc.log('iptarget', wdg.name());
                 return (cmc.valid.hostname(wdg) || cmc.valid.ipv4(wdg) || cmc.valid.ipv6(wdg));
             }
         },
@@ -1003,7 +1098,7 @@ var cmc = function() {
         },
         msie: function()
         {
-            if (_msie===undefined)
+            if (_msie === undefined)
             {
                 var match = /.*MSIE (\d*)..*/.exec(navigator.userAgent);
                 if (match !== null && match[1] !== undefined)
@@ -1012,6 +1107,9 @@ var cmc = function() {
                     _msie = null;
             }
             return _msie;
+        },
+        log: function(fctname, str) {
+//            console.log(fctname, str);
         }
     };
 }();

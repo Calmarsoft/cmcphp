@@ -58,7 +58,7 @@ class sess implements ISerializable {
     private static $_sess;
     private static $_sess_started;
     private static $_bMultiTask;    
-    private $_request;
+    private $_request, $_navhist;
 
     /**
      * initialization process: deserizalises the session and embedded data, or creates a new one
@@ -131,7 +131,7 @@ class sess implements ISerializable {
     /**
      * init done when the session is created or recovered the first time
      */
-    private function initialize() {
+    protected function initialize() {
         if (!$this->_request)
             $this->_request = new request($this->_app);
 
@@ -356,8 +356,53 @@ class sess implements ISerializable {
      */
     function onNewpage() {
         $this->initialize();
+        if ($this->getRequest()->isGet()) {
+            $url = $this->getRequest()->getReqPath();
+            if ($this->_navhist==null)
+                $this->_navhist = array();
+            array_push($this->_navhist, $url);
+        }
     }
 
+    /**
+     * gets the url of the session navigation history
+     * 
+     * @param integer $steps number of steps back
+     */
+    function getHistoryLocation(&$steps) {
+        $remainsteps = $steps;
+        if ($this->_navhist==null)
+            return null;
+        
+        $current = $this->getRequest()->getReqPath();
+        
+        $posd = $pos = count($this->_navhist)-1;
+        while ($pos>=0 && $this->_navhist[$pos]===$current) {
+            $pos--;
+        }
+        
+        $remainsteps--;
+        if ($remainsteps>$pos || $remainsteps<0)
+            return null;
+        $steps = $posd - $pos - $remainsteps;
+        return $this->_navhist[$pos - $remainsteps];
+    }
+    
+    /**
+     * updates the history if we perform a 'back' redirection
+     * 
+     * @param integer $steps
+     */    
+    function truncHistoryLocation($steps) {
+        if ($this->_navhist==null)
+            return;
+        $last = count($this->_navhist)-1;
+        $offset = $last-$steps;
+        if ($offset < 0)
+            $offset = 0;
+        array_splice($this->_navhist, $offset);
+    }
+    
     /**
      * returns current translation object
      * 
@@ -365,6 +410,15 @@ class sess implements ISerializable {
      */
     function getTranslation() {
         return $this->_translation;
+    }
+    
+    /**
+     * defines some direct translation or text; can override framework internal messages
+     * 
+     * @param array $locData
+     */
+    function setTextData($locData) {
+        $this->_translation->addData($locData);
     }
 
     /**
@@ -378,6 +432,16 @@ class sess implements ISerializable {
             return false;
         }
         return $tr->getText($key);
+    }
+    
+    function translateFmt($key) {
+        $args = func_get_args();array_shift($args);
+                
+        $tr = $this->getTranslation();
+        if (!$tr) {
+            return false;
+        }
+        return $tr->fmtText($key, $args);
     }
 
     /**
@@ -429,7 +493,7 @@ class sess implements ISerializable {
     /**
      * retrieves the request object
      * 
-     * @return cmc\core\request
+     * @return \cmc\core\request
      */
     function getRequest() {
         return $this->_request;
@@ -466,7 +530,6 @@ class sess implements ISerializable {
         foreach ($this->_dynframes as $frame) {
             $frame->OnSerialize();
         }
-
         $this->_dynframesByName = null;
         foreach ($this->_sesviews as $sesview) {
             if (!config::SESS_save_mat) {

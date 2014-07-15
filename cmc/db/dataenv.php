@@ -48,6 +48,9 @@ use cmc\db\mysqli\database_mysqli_factory;
 abstract class dataenv {
 
     private $_ourDS, $_ourDB;
+    private $_benchmarking;
+    private $_benchBegin;
+    private $_execLog;
 
     /**
      * defines the factory of this environment. It can be done by inheriting dataenv_xxx or putting a 'type' entry in config['db']
@@ -150,7 +153,7 @@ abstract class dataenv {
 
         if (!$this->_ourDB) {
             $factory = $this->getDatabaseFactory();
-            $this->_ourDB = $factory::createdatabase($this->getDatabaseName(), $this->getServerName());
+            $this->_ourDB = $factory::createdatabase($this, $this->getDatabaseName(), $this->getServerName());
             if ($this->_ourDB) {
                 $this->_ourDB->setLogin($this->getLogin(), $this->getPassword());
                 $this->_ourDB->setPort($this->getPort());
@@ -220,7 +223,50 @@ abstract class dataenv {
         }
         return $result;
     }
+    
+    public function enableBenchMarking() {
+        $this->_benchmarking = true;
+    }
 
+    public function benchMarking() {
+        return $this->_benchmarking;
+    }
+    
+    /**
+     * used for debugging information: called by objects just before executing SQL statement
+     */
+    public function executionBegin() {
+        if (!$this->_benchmarking)
+            return;
+        $this->_benchBegin = microtime(true);
+    }
+    /**
+     * used for debugging information: called by objects just after executing SQL statement
+     * 
+     * @param type $sql statement text
+     * @param type $rows affected rows or null
+     */
+    public function executionLog($sql, $rows) {
+        if (!$this->_benchmarking)
+            return;
+        $duration = microtime(true) - $this->_benchBegin;
+        if (!is_array($this->_execLog))
+            $this->_execLog = array();
+        array_push($this->_execLog, array('sql'=>$sql, 'time'=>$duration, 'rows'=>$rows));
+    }
+    
+    public function getExecutionText() {
+        if (!$this->_benchmarking || !is_array($this->_execLog))
+            return '';
+        echo '<table class="cmc-timings"><tbody>';
+        foreach ($this->_execLog as $item) {
+            echo '<tr><td>'.$item['sql'].'</td><td>'
+                           .\number_format($item['time']*1000, 3).' ms</td><td>'
+                           .$item['rows'].'</td></tr>';
+        }
+        echo '</tbody></table>';
+    }
+    
     /**
      * instantiates or retrieves a datasource from its name in the inventory, 
      * then executes it with parameters
@@ -245,6 +291,9 @@ abstract class dataenv {
     public function OnSerialize() {
         $this->_ourDS = array();
         $this->_ourDB = null;
+        $this->_execLog = null;
+        $this->_benchBegin = null;
+        $this->_benchmarking = null;
     }
 
 }

@@ -185,6 +185,8 @@ class datatable_mysqli extends datatable {
                 $pvals = $key;
             }
             $result = $this->setStmtParms($this->_delete, $pvals);
+            if (!$result)
+                throw new DatabaseException('DELETE', 'error deleting row');            
             $this->_delete->execute();
         }
     }
@@ -232,6 +234,8 @@ class datatable_mysqli extends datatable {
         }
         if ($this->_insert) {
             $result = $this->setStmtParms($this->_insert, array_values($data));
+            if (!$result)
+                throw new DatabaseException('INSERT', 'error inserting data '.implode(',',$data));
             if (!$this->_insert->execute())
                 throw new DatabaseException('INSERT', 'error inserting data '.implode(',',$data));
         }
@@ -299,6 +303,8 @@ class datatable_mysqli extends datatable {
                 $parms[] = $data[$f['name']];
             }
             $result = $this->setStmtParms($this->_update, $parms);
+            if (!$result)
+                throw new DatabaseException('UPDATE', 'error inserting data');
             if (!$this->_update->execute())
                 throw new DatabaseException('UPDATE', 'error updating data');
             if ($this->_update->affected_rows !== 1) {

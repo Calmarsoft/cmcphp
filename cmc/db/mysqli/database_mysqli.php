@@ -49,8 +49,8 @@ use cmc\db\mysqli\DatabaseException_mysqli;
 class database_mysqli_factory extends databasefactory {
     const className=__CLASS__;
     
-    static public function createdatabase($database, $server='localhost') {
-        return new database_mysqli($database, $server);
+    static public function createdatabase($dataenv, $database, $server='localhost') {
+        return new database_mysqli($dataenv, $database, $server);
     }
 
 }
@@ -65,8 +65,8 @@ class database_mysqli extends database {
     private $_mysqli;
     private $_prvFlag='p:';
 
-    public function __construct($database, $server) {
-        parent::__construct($database, $server);
+    public function __construct($dataenv, $database, $server) {
+        parent::__construct($dataenv, $database, $server);
         $this->_port  = 3306;
         $this->_mysqli = null;
     }
@@ -156,8 +156,12 @@ class database_mysqli extends database {
         if (!$this->_mysqli)
             return;
         $stmt = $this->_mysqli->prepare($sqlData);
-        if ($stmt)
-            return dataquery_mysqli::create($this, $stmt);
+        if ($stmt) {
+            $ds = dataquery_mysqli::create($this, $stmt);
+            if ($this->dataenv()->benchMarking())
+                $ds->setSqlText($sqlData);
+            return $ds;
+        }
         else {
             throw new DatabaseException_mysqli($this, 'PREP', 'prepare failed');
         }

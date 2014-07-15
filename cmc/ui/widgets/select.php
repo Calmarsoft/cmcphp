@@ -112,6 +112,13 @@ class select extends compositelist {
             $domItem->setAttribute ('selected', '');
     }
     
+    protected function applyPropertyDOM($view, $propname, $propval) {
+        if ($propname=='value')  // mark as valid
+            return true;
+        
+        return parent::applyPropertyDOM($view, $propname, $propval);
+    }
+    
     /** 
      * keeps list data
      */
@@ -127,9 +134,10 @@ class select extends compositelist {
     }
 
     public function OnUnSerialize() {
-        if ($this->_currwview)
-            $this->_currwview->SetCltProp(self::prop_Data, $this->_list_ser);
+        if ($this->_list_ser!==null)
+            $this->_properties[self::prop_Data] = $this->_list_ser;
         $this->_list_ser = null;
         parent::OnUnserialize();
     }
+
 }
