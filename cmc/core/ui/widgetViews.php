@@ -64,12 +64,13 @@ class widgetViews implements IClonablep, ISerializablep {
      * @return widgetView
      */
     public function initDOMElement($view, $frame, $xpath) {        
-        $domElem = widgetView::seekDOMElem($view, $frame, $xpath);  
-        if (!$domElem)
-            return null;
-        
-        $domElemPath = $domElem->getNodePath();
         $idx = $view->GetName();
+        $domElem = widgetView::seekDOMElem($view, $frame, $xpath);  
+        if (!$domElem) {
+            return $this->getItem($idx);
+        }
+        
+        $domElemPath = $domElem->getNodePath();        
         // this will be the default index (first domElementPath encountered)
         if ($this->_domElement_path == null || 
             $this->_domElement_path == $domElemPath) {

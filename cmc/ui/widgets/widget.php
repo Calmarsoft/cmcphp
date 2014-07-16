@@ -87,7 +87,7 @@ abstract class widget implements IClonablep, ISerializablep {
     protected $_domid;          // main object id in DOM (for jQuery)
     protected $_properties;     // all widget properties such as caption, color, additional classes, ...
     protected $_constants;      // defines widget user-defined constants, which can be referenced later
-    protected $_bDynamic, $_matDynamic = false;
+    protected $_bDynamic, $_matDynamic = false, $_preupdate=false;
     private $_dyncode = false;
     private $_ajaxAnswer;
     private $_widgetListeners;
@@ -412,9 +412,10 @@ abstract class widget implements IClonablep, ISerializablep {
     private function applyProperties($view, $bDom) {
         if (!$bDom) {
             $this->_ajaxAnwer = array();
+        } else {
+            if (!$this->_currwview)
+                return;            
         }
-        if (!$this->_currwview)
-            return;
 
         foreach ($this->_properties as $propname => $propval) {
             $success = false;
@@ -422,13 +423,16 @@ abstract class widget implements IClonablep, ISerializablep {
                 $success = $this->applyPropertyDOM($view, $propname, $propval);
             } else {
                 $val = $this->getAjaxPropVal($propname);
-                $clt = $this->_currwview->CltProp($propname);
+                if ($this->_currwview)
+                    $clt = $this->_currwview->CltProp($propname);
+                else 
+                    $clt = null;
                 if ($val !== $clt) {
                     $this->_ajaxAnswer[$propname] = $val;
                     $success = true;
                 }
             }
-            if ($success)
+            if ($success && $this->_currwview)
                 $this->_currwview->SetCltProp($propname, $propval);
         }
 
@@ -461,7 +465,8 @@ abstract class widget implements IClonablep, ISerializablep {
         if ($this->_frame->is_dynamic())
             $this->_bDynamic = true;
         if ($view->material()->is_dynamic())
-            $this->_matDynamic = true;            
+            $this->_matDynamic = true;      
+        $this->_preupdate = true;
     }
 
     /**
@@ -846,10 +851,12 @@ abstract class widget implements IClonablep, ISerializablep {
     public function addScriptCode($code) {
         $this->_composcript .= $code;
         $this->_actualscript = false;
-        if ($this->_matDynamic || !config::SESS_save_mat) {
+        
+        if ($this->_matDynamic || ($this->_preupdate && !config::SESS_save_mat)) {
             $this->_dyncode = true;
         }
-        //echo "AS" .$this->_name;var_dump( $this->_actualscript, $this->_dyncode, $this->_composcript, $this->bDynamic());
+        //xdebug_print_function_stack();
+        //echo "AS" .$this->_name;var_dump( $this->_actualscript, $this->_dyncode, $this->_composcript, $this->bDynamic(), $this->_preupdate);
     }
 
     // when serialized with the app
@@ -867,8 +874,12 @@ abstract class widget implements IClonablep, ISerializablep {
           //   echo "SerB ".$this->_name;var_dump($this->_actualscript, $this->_bDynamic);
           //echo 'Ser '.$this->_name;var_dump($this->_actualscript);
           $this->_actualscript = false;
-          if ($this->_dyncode)
+          
+          //var_dump($this->_composcript, $this->_matDynamic, $this->_bDynamic, $this->_dyncode);
+          // if code is dynamic, compscript will be recomputed next time
+          if ($this->_dyncode) {            
             $this->_composcript = '';
+          }
           //echo $this->_name;var_dump( $this->_actualscript, $this->_dyncode, $this->_composcript);
         } else {
             //   echo "SerC ".$this->_name;var_dump($this->_actualscript, $this->_bDynamic);

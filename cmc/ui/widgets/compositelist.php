@@ -280,7 +280,8 @@ class compositelist extends widget {
     protected function setDataStateAjax($view, $ajax) {
         if ($ajax) {
             $this->_dataValid = 'ajax';
-            $this->_currwview->restoreDOMElem($view);
+            if ($this->_currwview)
+                $this->_currwview->restoreDOMElem($view);
         } else {
             $this->_dataValid = 'dom';            
         }
