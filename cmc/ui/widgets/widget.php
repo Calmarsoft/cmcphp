@@ -33,7 +33,7 @@ require_once('cmc/core/ui/widgetViews.php');
 use cmc\core\IClonable as IClonablep;
 use cmc\core\ISerializable as ISerializablep;
 use cmc\sess,
-    cmc\cmc;
+    cmc\cmc, cmc\config;
 use cmc\db\datasource;
 use cmc\core\ui\widgetViews;
 use cmc\ui\frame,
@@ -87,7 +87,7 @@ abstract class widget implements IClonablep, ISerializablep {
     protected $_domid;          // main object id in DOM (for jQuery)
     protected $_properties;     // all widget properties such as caption, color, additional classes, ...
     protected $_constants;      // defines widget user-defined constants, which can be referenced later
-    protected $_bDynamic;
+    protected $_bDynamic, $_matDynamic = false;
     private $_dyncode = false;
     private $_ajaxAnswer;
     private $_widgetListeners;
@@ -460,6 +460,8 @@ abstract class widget implements IClonablep, ISerializablep {
     public function viewPreUpdate(dynview $view) {
         if ($this->_frame->is_dynamic())
             $this->_bDynamic = true;
+        if ($view->material()->is_dynamic())
+            $this->_matDynamic = true;            
     }
 
     /**
@@ -844,8 +846,10 @@ abstract class widget implements IClonablep, ISerializablep {
     public function addScriptCode($code) {
         $this->_composcript .= $code;
         $this->_actualscript = false;
-        if ($this->bDynamic())
+        if ($this->_matDynamic || !config::SESS_save_mat) {
             $this->_dyncode = true;
+        }
+        //echo "AS" .$this->_name;var_dump( $this->_actualscript, $this->_dyncode, $this->_composcript, $this->bDynamic());
     }
 
     // when serialized with the app
@@ -859,14 +863,16 @@ abstract class widget implements IClonablep, ISerializablep {
         if (\cmc\app()->getSession() == null) {
             //   echo "SerA ".$this->_name;var_dump($this->_actualscript, $this->_bDynamic);
             $this->_actualscript = '';
-        } /* else if ($this->bDynamic()) {
+        } else if ($this->bDynamic()) {
           //   echo "SerB ".$this->_name;var_dump($this->_actualscript, $this->_bDynamic);
           //echo 'Ser '.$this->_name;var_dump($this->_actualscript);
-          $this->_actualscript = $this->_dyncode;
-          $this->_composcript = '';
-          } */ else {
+          $this->_actualscript = false;
+          if ($this->_dyncode)
+            $this->_composcript = '';
+          //echo $this->_name;var_dump( $this->_actualscript, $this->_dyncode, $this->_composcript);
+        } else {
             //   echo "SerC ".$this->_name;var_dump($this->_actualscript, $this->_bDynamic);
-            $this->getScriptCode();
+          $this->getScriptCode();
         }
         $this->_properties = array();       // data remains in 'clt' part
     }
@@ -882,7 +888,7 @@ abstract class widget implements IClonablep, ISerializablep {
     public function onClone($srcinstance) {
         /* if ($_SERVER['REQUEST_METHOD']!='POST') {
           echo "clone: "; var_dump($srcinstance);
-          } */
+          } */    
         $this->_ajaxAnswer = null;
         $this->_wviews = new widgetViews();
         if ($srcinstance->_wviews)

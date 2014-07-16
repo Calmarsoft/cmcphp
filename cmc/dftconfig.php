@@ -92,11 +92,11 @@ abstract class dftconfig {
      * @param type $key
      * @return type
      */
-    static function val($key) {
+    static function val($key, $dft=null) {
         if (array_key_exists($key, self::$userConfig))
             return self::$userConfig[$key];
         else
-            return null;
+            return $dft;
     }
     /**
      * defines the url form as a regular expression, to choose where to place the language part

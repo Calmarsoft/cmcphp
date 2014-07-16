@@ -68,7 +68,6 @@ class app implements ISerializable {
     private $_defaultFrameClasses = array(
         documentFrame::className
     );
-    protected $_404_view = 'errors/404';
     // members regarding serialization
     private $_ranOK;
     private static $_serialkey;
@@ -303,7 +302,7 @@ class app implements ISerializable {
 
     protected function __construct() {
         $this->dft_Parameters['path'] = config::my_dft_Path;
-        $this->dft_Parameters['404_view'] = config::my_dft_Path;
+        $this->dft_Parameters['404_view'] = config::val('404_view', $this->dft_Parameters['404_view']);
 
         $this->APP_mark = cmc::mark();
         $this->_appframes = array();

@@ -371,6 +371,10 @@ class material implements IClonable, ISerializable {
     public function setDynamic() {
         $this->_bDynamic = true;
     }
+    
+    public function is_dynamic() {
+        return $this->_bDynamic;
+    }
 
     /**
      * used by widgets: adds some initialization script code
