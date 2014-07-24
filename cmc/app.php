@@ -581,7 +581,7 @@ class app implements ISerializable {
                 if ($req->getAnswerType() == request::type_html) {
                     printf('<style>.cmc-timings {float: left;margin-left: 10px;margin-top:0px;font-size:small;}</style>');
                     printf('<br><pre class="cmc-timings">parse time=%.03f ms<br>', $parset);
-                    printf('Execution time=%.03f ms, Total=%.03f ms<br>Memory max uage=%.02fMB', $exect, $totalt, $mem);
+                    printf('Execution time=%.03f ms, Total=%.03f ms<br>Memory max uage=%.02fMB</pre>', $exect, $totalt, $mem);
                     if ($this->_sess->getDataEnv()) {
                         echo($this->_sess->getDataEnv()->getExecutionText());
                     }
