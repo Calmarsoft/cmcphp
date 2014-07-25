@@ -402,10 +402,16 @@ class app implements ISerializable {
             $fixpath = $this->getFixPath($lang, $view_path);
             if (!$fixpath) {
                 // no view => go to 404 page
-                $fixpath = $this->getFixPath($lang, $this->dft_Parameters['404_view']);
+                if (config::DFT_REDIRECT)
+                    $fixpath = $this->getFixPath($lang, $this->dft_Parameters['path']);                    
+                else
+                    $fixpath = $this->getFixPath($lang, $this->dft_Parameters['404_view']);
+                if (!$fixpath)
+                    $fixpath = $this->getFixPath($lang, $this->dft_Parameters['path']);
+                
                 if ($fixpath) {
                     // redirection in error case
-                    if (config::ERR_REDIRECT) {
+                    if (config::ERR_REDIRECT || config::DFT_REDIRECT) {
                         if (!$this->_emptyView)
                             $this->_emptyView = view::create($this);
                         $this->_emptyView->setResponseCode(303);
@@ -413,8 +419,7 @@ class app implements ISerializable {
                             $fixpath = request::rootpath();
                         header('Location: ' . $fixpath);
                         return $this->_emptyView;
-                    }
-                    else {
+                    } else {
                         // error management page -> reset viewpath, view_pathloc
                         $view_path = $fixpath;
                         if (config::Multilingual) {
@@ -426,13 +431,6 @@ class app implements ISerializable {
                     }
                 } else {
                     fatalErrors::trigger($this->getSession(), fatalErrors::noValidView, 1, $view_path);
-                }
-            }
-            if (config::DFT_REDIRECT && $retcode != 404) {
-                if ($this->_sess->getRequestPath() != request::rootpath() . $fixpath) {
-                    $this->_emptyView->setResponseCode(303);
-                    header('Location: ' . $fixpath);
-                    return $this->_emptyView;
                 }
             }
 
